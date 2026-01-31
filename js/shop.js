@@ -4,7 +4,6 @@ import { collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gst
 let cart = JSON.parse(localStorage.getItem('tokoCart')) || [];
 let allMenus = [];
 
-// Load Data
 onSnapshot(collection(db, "menus"), (snapshot) => {
     allMenus = [];
     snapshot.forEach(doc => allMenus.push(doc.data()));
@@ -19,12 +18,11 @@ function render(menus) {
             <div class="card-content">
                 <h4>${item.name}</h4>
                 <p>Rp ${item.price.toLocaleString('id-ID')}</p>
-                <button onclick="addToCart('${item.name}', ${item.price})" style="width:100%">Tambah</button>
+                <button onclick="addToCart('${item.name}', ${item.price})">Tambah</button>
             </div>
         </div>`).join('');
 }
 
-// Search
 document.getElementById('search-input').oninput = (e) => {
     const keyword = e.target.value.toLowerCase();
     const filtered = allMenus.filter(m => m.name.toLowerCase().includes(keyword));
@@ -46,12 +44,10 @@ function updateUI() {
     document.getElementById('cart-count').innerText = `🛒 ${cart.length}`;
     const itemsDiv = document.getElementById('cart-items');
     itemsDiv.innerHTML = cart.map((item, i) => `
-        <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+        <div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee">
             <span>${item.name}</span>
-            <span>Rp ${item.price.toLocaleString()} <button onclick="remove(${i})" class="btn-danger" style="padding:2px 5px">x</button></span>
+            <span>Rp ${item.price.toLocaleString()} <button onclick="remove(${i})" style="width:auto; padding:0 5px" class="btn-danger">x</button></span>
         </div>`).join('');
-    
-    if(cart.length > 0) itemsDiv.innerHTML += `<textarea id="note" placeholder="Catatan (misal: pedas, jangan layu)"></textarea>`;
     const total = cart.reduce((a, b) => a + b.price, 0);
     document.getElementById('cart-total').innerText = `Rp ${total.toLocaleString('id-ID')}`;
 }
@@ -59,17 +55,17 @@ function updateUI() {
 window.remove = (i) => { cart.splice(i,1); updateUI(); };
 
 window.checkout = async () => {
-    if(!cart.length) return;
-    const nama = prompt("Nama Anda:");
+    if(!cart.length) return alert("Keranjang kosong!");
+    const nama = prompt("Nama Lengkap:");
     if(!nama) return;
-    const catatan = document.getElementById('note').value;
+    const catatan = document.getElementById('order-note').value;
     
     await addDoc(collection(db, "orders"), {
         customerName: nama, items: cart, note: catatan,
         totalPrice: cart.reduce((a,b)=> a+b.price, 0),
         status: "Baru", createdAt: serverTimestamp()
     });
-    alert("Pesanan dikirim!");
+    alert("Pesanan terkirim!");
     cart = []; updateUI(); toggleCart();
 };
 updateUI();
